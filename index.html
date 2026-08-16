@@ -82,11 +82,12 @@ tr.detail td{background:var(--chip);padding:0 12px 12px;text-align:left;white-sp
 }
 #sortsel{max-width:260px}
 </style></head><body><div class="wrap">
-<div class="stamp">Uploaded Sun 16 Aug 2026, 4:57 AM (Beirut)</div>
+<div class="stamp">Uploaded Sun 16 Aug 2026, 5:03 AM (Beirut)</div>
 <div class="controls">
  <input id="q" type="search" placeholder="Search table name, area or section&hellip;" autocomplete="off">
  <button class="btn" id="onlyDoor" aria-pressed="false">Door pay<span class="lg">ers only</span></button>
  <button class="btn" id="cols" aria-pressed="false">Columns</button>
+ <button class="btn" id="auto" aria-pressed="true" title="Reload this page every minute to pick up a newer report">Auto &#8635; <span id="autot">1m</span></button>
  <select id="sortsel" aria-label="Sort by">
   <option value="name">Sort: Table name (A&ndash;Z)</option>
   <option value="checkedIn">Sort: Checked in (high&rarr;low)</option>
@@ -203,6 +204,27 @@ document.querySelectorAll('th[data-k]').forEach(th=>th.addEventListener('click',
   th.setAttribute('data-on','1'); th.querySelector('.ar').innerHTML=sortDir===1?'&#9650;':'&#9660;';
   view();
 }));
+// --- auto refresh: pull a newer index.html without touching the phone ---
+const REFRESH_MS=60000;
+let auto=true, left=REFRESH_MS, timer=null;
+const autoBtn=document.getElementById('auto'), autoT=document.getElementById('autot');
+function busy(){ return document.getElementById('q').value.trim()!=='' || open.size>0; }
+function fmtLeft(ms){ const s=Math.max(0,Math.round(ms/1000)); return s>=60?`${Math.ceil(s/60)}m`:`${s}s`; }
+function tick(){
+  if(!auto){ autoT.textContent='off'; return; }
+  left-=1000;
+  if(left<=0){
+    if(busy()){ left=30000; }                      // reading something — try again shortly
+    else { const u=location.pathname+'?t='+Date.now(); location.replace(u); return; }
+  }
+  autoT.textContent=fmtLeft(left);
+}
+autoBtn.addEventListener('click',()=>{
+  auto=!auto; left=REFRESH_MS;
+  autoBtn.setAttribute('aria-pressed',auto);
+  autoT.textContent=auto?fmtLeft(left):'off';
+});
+timer=setInterval(tick,1000);
 document.querySelector('th[data-k=name]').setAttribute('data-on','1');
 view();
 </script></body></html>
